@@ -13,6 +13,7 @@ apt <- read_xml(url, encoding = 'utf-8')
 xml_structure(apt)
 items = xml_node(apt,'items')
 items
+Sys.setlocale("LC_ALL", "C")
 #거래금액
 price = xml_text(xml_nodes(items,'거래금액'))
 price
