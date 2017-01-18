@@ -10,7 +10,7 @@ locCode <-c("11110","11140","11170","11200","11215","11230","11260","11290","113
 datelist <-c("201601","201602","201603","201604","201605","201606","201607","201608","201609","201610","201611","201612")
 
 
-#url <- paste0("http://openapi.molit.go.kr:8081/OpenAPI_ToolInstallPackage/service/rest/RTMSOBJSvc/getRTMSDataSvcAptTrade?LAWD_CD=",locCode,"&DEAL_YMD=",datelist,"&serviceKey=",service_key)
+url <- paste0("http://openapi.molit.go.kr:8081/OpenAPI_ToolInstallPackage/service/rest/RTMSOBJSvc/getRTMSDataSvcAptTrade?LAWD_CD=11110&DEAL_YMD=201601&serviceKey=",service_key)
 
 urllist <- list()
 cnt <-0
@@ -20,7 +20,7 @@ for(i in 1:length(locCode)){
     urllist[cnt] <-paste0("http://openapi.molit.go.kr:8081/OpenAPI_ToolInstallPackage/service/rest/RTMSOBJSvc/getRTMSDataSvcAptTrade?LAWD_CD=",locCode[i],"&DEAL_YMD=",datelist[j],"&serviceKey=",service_key) 
   }
 }
-
+raw.data <- xmlTreeParse(url, useInternalNodes = TRUE,encoding = "utf-8")
 
 item <- data.frame()
 #item <- list()
@@ -34,10 +34,10 @@ for(i in 1:length(urllist)){
      item<-rbind(item,t(as.data.frame(item_temp)))
     }
 }
-names(items)
-items[[1]]['거래금액']
+
 #컬럼명
 names(item)<-c("거래금액","건축년도","년","법정동","아파트","월","일","전용면적","지번","지역코드","층")
+save(item, file="apt_item_sales_dt.Rdata")
 
-
+names(items[[1]])
 
