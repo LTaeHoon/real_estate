@@ -9,12 +9,36 @@ datelist <-c("201601","201602","201603","201604","201605","201606","201607","201
 
 
 url <- paste0("http://openapi.molit.go.kr:8081/OpenAPI_ToolInstallPackage/service/rest/RTMSOBJSvc/getRTMSDataSvcAptTrade?LAWD_CD=",locCode[1],"&DEAL_YMD=",datelist[1],"&serviceKey=",service_key)
-apt <- xml(url)
+apt <- read_xml(url, encoding = 'utf-8')
 xml_structure(apt)
 items = xml_node(apt,'items')
-price = xml_text(xml_nodes(items,'嫄곕옒湲덉븸'))
+items
+#거래금액
+price = xml_text(xml_nodes(items,'거래금액'))
+price
+#건축년도
+con_year = xml_text(xml_nodes(items,"건축년도"))
+#년
+sale_year = xml_text(xml_nodes(items,"년"))
+#법정동
 
+#아파트
 
+#월
+
+#일
+
+#전용면적
+
+#지번
+
+#지역코드
+
+#층
+
+iconv("嫄곕옒湲덉븸","utf-8","cp949")
+Sys.setlocale("LC_ALL", "ko_KR.UTF-8")
+Sys.getlocale()
 # "嫄곕옒湲덉븸"   "嫄댁텞\xeb뀈\xeb룄"               "\xeb뀈" 
 # 
 # "踰뺤젙\xeb룞"   "\xec븘\xed뙆\xed듃"               "\xec썡" 
