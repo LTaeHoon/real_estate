@@ -27,33 +27,34 @@ data_processing <- function(){
     #xml_node()에서 한글 사용을 위해 locale 값 변경 
     Sys.setlocale("LC_ALL", "C")
     #거래금액
-    price = xml_text(xml_nodes(items,'거래금액'))
+    price[i] = xml_text(xml_nodes(items,'거래금액'))
     #건축년도
-    con_year = xml_text(xml_nodes(items,"건축년도"))
+    con_year[i] = xml_text(xml_nodes(items,"건축년도"))
     #년
-    sale_year = xml_text(xml_nodes(items,"년"))
+    sale_year[i] = xml_text(xml_nodes(items,"년"))
     #법정동
-    dong = xml_text(xml_nodes(items,"법정동"))
+    dong[i] = xml_text(xml_nodes(items,"법정동"))
     
     #아파트
-    aptnm = xml_text(xml_nodes(items,"아파트"))
+    aptnm[i] = xml_text(xml_nodes(items,"아파트"))
     #월
-    month = xml_text(xml_nodes(items,"월"))
+    month[i] = xml_text(xml_nodes(items,"월"))
     #일
-    day = xml_text(xml_nodes(items,"일"))
+    day[i] = xml_text(xml_nodes(items,"일"))
     #전용면적
-    area = xml_text(xml_nodes(items,"전용면적"))
+    area[i] = xml_text(xml_nodes(items,"전용면적"))
     #지번
-    address = xml_text(xml_nodes(items,"지번"))
+    address[i] = xml_text(xml_nodes(items,"지번"))
     #지역코드
-    loc = xml_text(xml_nodes(items,"지역코드"))
+    loc[i] = xml_text(xml_nodes(items,"지역코드"))
     #층
-    floor = xml_text(xml_nodes(items,"층"))
-    Sys.setlocale("LC_ALL", "")
-    apt_dt_temp <- data.table(price,con_year,sale_year,dong,aptnm,month,day,area,address,loc,floor)
-    apt_dt<-rbind(apt_dt,apt_dt_temp)
+    floor[i] = xml_text(xml_nodes(items,"층"))
+   
   }
 
+  Sys.setlocale("LC_ALL", "")
+  apt_dt_temp <- data.table(price,con_year,sale_year,dong,aptnm,month,day,area,address,loc,floor)
+  apt_dt<-rbind(apt_dt,apt_dt_temp)
   
   
   library(rvest)
@@ -80,7 +81,6 @@ data_processing <- function(){
         xml_node('items')
     Sys.setlocale("LC_ALL", "C")          
     items%>%xml_nodes(findvalue)%>%xml_text()
-    
   }
   
   price<-lapply(urllist,get_item,findvalue="거래금액")
