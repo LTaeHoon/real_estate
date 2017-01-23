@@ -1,8 +1,9 @@
 #문제정의  : 1. 내가 살고 있는 집 혹은 우리 동네 관심을 갖고 있는 집값에 대한 예측
 # 2.전체 매매, 전세 추이 및 내가 살고 있는 지역의 매매,전세 추이
 
-
+install.packages("XML")
 library(XML)
+library(data.table)
 #data 수집 과정 (data.go.kr에서 제공하는 API 사용)
 service_key <- "EeBjN2xdCzzcqHvefO0rZXaycAim0uGpKxnOX72PY1UpkSZnifzIK1kxLm61XXaQ4pFxhbW%2F%2FZbmQDKFiAFNVA%3D%3D"
 #서울시 지역코드
@@ -22,16 +23,17 @@ for(i in 1:length(locCode)){
 }
 raw.data <- xmlTreeParse(url, useInternalNodes = TRUE,encoding = "utf-8")
 
-item <- data.frame()
+item <- data.table()
 #item <- list()
 for(i in 1:length(urllist)){
-  raw.data <- xmlTreeParse(urllist[i], useInternalNodes = TRUE,encoding = "utf-8")
+  raw.data <- xmlTreeParse(urllist[1], useInternalNodes = TRUE,encoding = "utf-8")
   rootNode <- xmlRoot(raw.data)
   items <- rootNode[[2]][['items']]
+
   size <- xmlSize(items)
   for(i in 1:size){
      item_temp <- xmlSApply(items[[i]],xmlValue)
-     item<-rbind(item,t(as.data.frame(item_temp)))
+     item<-rbind(item,t(as.data.table(item_temp)))
     }
 }
 
