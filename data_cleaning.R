@@ -57,3 +57,9 @@ ggplot(apt_data_by_gu,aes(x=yyyym,y=pricemean))+
   geom_smooth(method="lm")+
   xlab("2016년 분기별")+
   ylab("아파트평균매매가격")
+
+#지역별구 매매가 평균
+#편차가 가장 큰 곳
+#동별 평균 매매가 추이
+#이상치는 어떻하지
+#
