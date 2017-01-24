@@ -4,6 +4,7 @@
 install.packages("XML")
 library(XML)
 library(data.table)
+
 #data 수집 과정 (data.go.kr에서 제공하는 API 사용)
 service_key <- "EeBjN2xdCzzcqHvefO0rZXaycAim0uGpKxnOX72PY1UpkSZnifzIK1kxLm61XXaQ4pFxhbW%2F%2FZbmQDKFiAFNVA%3D%3D"
 #서울시 지역코드
@@ -21,11 +22,12 @@ for(i in 1:length(locCode)){
     urllist[cnt] <-paste0("http://openapi.molit.go.kr:8081/OpenAPI_ToolInstallPackage/service/rest/RTMSOBJSvc/getRTMSDataSvcAptTrade?LAWD_CD=",locCode[i],"&DEAL_YMD=",datelist[j],"&serviceKey=",service_key) 
   }
 }
-raw.data <- xmlTreeParse(url, useInternalNodes = TRUE,encoding = "utf-8")
+# raw.data <- xmlTreeParse(url, useInternalNodes = TRUE,encoding = "utf-8")
 
-item <- data.table()
-#item <- list()
+#item <- data.table()
+total<-list()
 for(i in 1:length(urllist)){
+  item <- list()
   raw.data <- xmlTreeParse(urllist[i], useInternalNodes = TRUE,encoding = "utf-8")
   rootNode <- xmlRoot(raw.data)
   items <- rootNode[[2]][['items']]
@@ -33,19 +35,23 @@ for(i in 1:length(urllist)){
   size <- xmlSize(items)
   for(i in 1:size){
      item_temp <- xmlSApply(items[[i]],xmlValue)
-     item<-rbind(item,t(as.data.table(item_temp)),fill=TRUE)
-    }
+     item[[i]]<-list(t(item_temp))
+     #item<-rbind(item,t(as.data.table(item_temp)),fill=TRUE)
+  }
+  total[[i]]<-rbindlist(item,fill = TRUE)
 }
-
+result_apt_data <- rbindlist(total,fill = TRUE)
 #컬럼명
-names(item)<-c("거래금액","건축년도","년","법정동","아파트","월","일","전용면적","지번","지역코드","층")
-save(item, file="apt_item_sales_dt3.Rdata")
+names(result_apt_data)<-c("거래금액","건축년도","년","법정동","아파트","월","일","전용면적","지번","지역코드","층")
+save(result_apt_data, file="apt_item_sales_dt.Rdata")
 
 
 library(stringr)
 library(ggplot2)
+load("apt_item_sales_dt.Rdata")
 
 apt_data<-data.table(item)
+apt_data<-data.table(result_apt_data)
 colnames(apt_data) <- c('price','con_year','year','dong','aptnm','month','dat','area','bungi','loc','floor')
 
 
@@ -100,7 +106,45 @@ ggplot(apt_data_by_gu,aes(x=yyyym,y=pricemean))+
   ylab("아파트평균매매가격")
 
 #지역별구 매매가 평균
+apt_data_by_gu_price <- aggregate(apt_data$price,apt_data[,c('loc')],mean)
+
 #편차가 가장 큰 곳
-#동별 평균 매매가 추이
-#이상치는 어떻하지
+#특정구 동별 평균 매매가 추이
+# 일단 구별(loc)로 나눈 구별 테이블이 필요
+dt<-list()
+for(i in 1:length(locCode)){
+  dt[[i]] <- subset(apt_data,loc==locCode[[i]])
+}
+
+# 동별 분기별 평균 매매가
+data1<-as.data.table(dt[[1]])
+data2<-as.data.table(dt[[2]])
+data3<-as.data.table(dt[[3]])
+data4<-as.data.table(dt[[4]])
+data5<-as.data.table(dt[[5]])
+data6<-as.data.table(dt[[6]])
+data7<-as.data.table(dt[[7]])
+data8<-as.data.table(dt[[8]])
+data9<-as.data.table(dt[[9]])
+data10<-as.data.table(dt[[10]])
+data11<-as.data.table(dt[[11]])
+data12<-as.data.table(dt[[12]])
+data13<-as.data.table(dt[[13]])
+data14<-as.data.table(dt[[14]])
+data15<-as.data.table(dt[[15]])
+data16<-as.data.table(dt[[16]])
+data17<-as.data.table(dt[[17]])
+data18<-as.data.table(dt[[18]])
+data19<-as.data.table(dt[[19]])
+data20<-as.data.table(dt[[20]])
+data21<-as.data.table(dt[[21]])
+data22<-as.data.table(dt[[22]])
+data23<-as.data.table(dt[[23]])
+data24<-as.data.table(dt[[24]])
+data25<-as.data.table(dt[[25]])
+
+data1_by_dong_qrt<-aggregate(data1$price,by=list(data1$yyyyqrt,data1$dong),mean)
+
+
+#시계열 회귀분
 #
