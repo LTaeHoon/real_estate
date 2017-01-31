@@ -2,7 +2,9 @@
 title: "부동산 매매가격 추이 분석"
 author: "taehoon"
 date: "2017년 1월 31일"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -16,26 +18,31 @@ knitr::opts_chunk$set(echo = TRUE)
 부동산은 살아가면서 특히 중요한 의사결정이 필요한 분야이다. 최근에는 다방이나 직방 같은 어플리케이션이 제공되며 부동산에 대한 정보를 제공해주고 있다. 이러한 정보는 객관적인 데이터를 제공하여 사람들의 의사결정을 도와 주고 주관적인 의사결정에 도움을 주고 있다. 이러한 맥락에서 이번 분석을 통한 매매가격 분석은 부동산을 사고 팔때 도움을 줄 수 있을 것이라 생각한다.
 이 분석에 큰 도움이 된 글은 전희원 님의 "R을 이용한 부동산 데이터 분석 케이스 스터디"임을 밝힌다.
 
-## 1. 데이터 수집 및 처리 
+## 1. 분석 목적
+
+- 서울 지역 아파트 매매가의 추이를 살펴본다.
+- 서울 특정구(관심을 갖는 구)의 매매가를 예측 해본다.
+
+## 2. 데이터 수집 및 처리 
 먼저, 분석을 위해 데이터가 필요하다. 어디에서 데이터를 어떤 방법으로 수집 할 수 있는지 구글링이나 네이버를 통해 찾아보았다.
-처음에 찾은 데이터는 국토교통부에서 제공하는 [실거래가 공개시스템](http://rtdown.molit.go.kr/)에서 해당 데이터에 대한 엑셀 파일을 다운로드 받을 수 있었다. 그러나 엑셀로 데이터를 다운받을 수 있는 날짜 범위가 최대 한달 밖에 되지 않아 너무 수동적으로 데이터를 수집해야 하는 문제점이 있었다. 다른 방법을 찾다가 공공데이터포털에서 제공되는 API를 찾을 수 있었다.[공공데이터포털링크](https://www.data.go.kr/dataset/3050988/openapi.do) 이 방법에도 제한 사항이 있었지만 앞에 방법보다는 더 좋아 보인다.
+처음에 찾은 데이터는 국토교통부에서 제공하는 [실거래가 공개시스템](http://rtdown.molit.go.kr/)에서 해당 데이터에 대한 엑셀 파일을 다운로드 받을 수 있었다. 그러나 엑셀로 데이터를 다운받을 수 있는 날짜 범위가 최대 한달 밖에 되지 않아 수동적으로 데이터를 수집해야 하는 문제점이 있었다. 다른 방법을 찾다가 공공데이터포털에서 제공되는 API를 찾을 수 있었다.[공공데이터포털링크](https://www.data.go.kr/dataset/3050988/openapi.do) 이 방법에도 제한 사항(일반사용자에게는 1일 1000회트래픽 제한)이 있었지만 앞에 방법보다는 더 좋아 보여 이 방법으로 데이터 수집을 하고자 결정했다.
 
-###1.1 데이터 수집 
+###2.1 데이터 수집 
 
-- 필요한 라이브러리 추가
+-필요한 라이브러리 추가
 
  - XML : API에서 xml 데이터 수집을 위한 패키지
  - data.table : data.frame 보다 더 빠르고 효율적인 data.table 사용을 위한  패키지
  - stringr : 문자열 처리 및 파이프 연산자 사용을 위한 패키기
  - ggplot2 : 시각화를 위한 패키지
-```{r}
+```{r,  results="hide"}
 library(XML)
 library(data.table)
 library(stringr)
 library(ggplot2)
 ```
 
-- API 접근을 위한 변수 설정
+-API 접근을 위한 변수 설정
 
 - service_key : 공공데이터 포털에서 API 사용 신청 시 받는 키값
 - locCode, datelist : API 접근 시 사용되는 매개변수
@@ -50,7 +57,7 @@ datelist <-c("201501","201502","201503","201504","201505","201506","201507","201
 #datelist <-c("201301","201302","201303","201304","201305","201306","201307","201308","201309","201310","201311","201312")
 ```
 
-- 데이터 수집할 url list 작성
+-데이터 수집할 url list 작성
 
 ```{r, eval=FALSE}
 urllist <- list()
@@ -64,7 +71,7 @@ for(i in 1:length(locCode)){
 
 ```
 
-- 데이터 수집 과정
+-데이터 수집 과정
 
 ```{r, eval=FALSE}
 total<-list()
@@ -97,7 +104,7 @@ result_apt_data <- rbindlist(total)
 save(result_apt_data, file="apt_item_sales_dt.Rdata")
 ```
 
-###1.2 데이터 전처리
+###2.2 데이터 전처리
 
 -데이터 로드 
 
@@ -143,80 +150,91 @@ lapply(locCode,function(x){apt_data[loc==x,gu:=locCode_nm[which(locCode==x)]]})
 ```
 
 
-## 2. 데이터 분석 
+## 3. 데이터 분석 
 
 데이터 수집 및 전처리 과정을 통해 정제된 데이터를 분석합니다.
 먼저 서울 지역 평균 매매가 추이를 살펴본다.
-```{r, fig.cap="서울 지역 평균 매매가 추이"}
+```{r, fig.cap="[그림1]서울 지역 평균 매매가 추이", fig.align="center"}
 apt_data_seo_price <- aggregate(apt_data$price,by=list(apt_data$yyyyqrt),mean)
 names(apt_data_seo_price) <- c("yyyyqrt","price")
 ggplot(apt_data_seo_price,aes(x=yyyyqrt,y=price,group=1))+
   geom_line() +
   xlab("분기별")+
   ylab("평균매매가격")+
+  theme(axis.text.x=element_text(angle=90))+
   stat_smooth(method='lm')
 ```
+그림1은 서울 지역 평균 매매가 추이를 분기별로 그려본 것이다. 서울 지역 평균 매매가는 2012년 1분기, 2013년 3분기, 2015년3분기에 하락세를 보였지만 전체적인 추이에는 영향이 없었고 꾸준히 상승하는 추이를 보이고 있다. 그 다음은 지역별(구) 평균 매매가 추이를 살펴보고자 한다.
 
-서울시 구/분기별 아파트 매매 가격
+지역별(구) 아파트 평균 매매가 추이
 
-```{r}
+```{r, fig.cap="[그림2]지역별(구) 아파트 평균 매매가 추이", fig.align="center"}
 apt_data_by_gu_qrt <- aggregate(apt_data$price, by=list(apt_data$yyyyqrt,apt_data$gu), mean)
 names(apt_data_by_gu_qrt) <- c('yyyyqrt','gu','pricemean')
 
 ggplot(apt_data_by_gu_qrt,aes(x=yyyyqrt,y=pricemean,group=gu))+
   geom_line()+
   facet_wrap(~gu,scale='free_y', ncol=3)+
+  theme(axis.text.x=element_blank())+
   stat_smooth(method="lm")
 ```
+그림2는 서울 지역별(구) 평균 매매가 추이를 지역별 분기별로 플로팅하고 선형모형을 피팅하여 추세를 살펴봤다. 대부분의 구에서 상승 추이가 보이는 것을 볼 수 있다. 마포구와 종로구는 다른 구에 비해 평평한 선형모형을 보여 평균 매매가가 유지되고 있는 것으로 보인다.
 
 시계열 분석
 시계열에 패턴이 존재한다면 미래에도 이러한 패턴이 계속 될 것이라는 가정하에 예측을 해볼 수 있다.
 그렇다면 시계열에 패턴이 존재하는지 확인하는 방법은 시계열이 랜덤한지를 알아보는 랜덤성 검증이 있다.
-랜덤성 검정 -> 런검정 
+랜덤성을 검증하는 런 검정을 통해서 시계열이 랜덤화 시계열 인지 확인해 보자.
 
-```{r}
-gu_meanprice <- aggregate(apt_data$price,by=list(apt_data$yyyym,apt_data$gu),mean)
+```{r, fig.cap="[그림3]지역별(구) 랜덤성 검정", fig.align="center"}
+gu_meanprice <- as.data.table(aggregate(apt_data$price,by=list(apt_data$yyyyqrt,apt_data$gu),mean))
 head(gu_meanprice)
-names(gu_meanprice)<- c('yyyym','gu','price')
+names(gu_meanprice)<- c('yyyyqrt','gu','price')
 #중복없이 구 추출
 gu_list <- unique(gu_meanprice$gu)
-
-# 각 구별 매매가격의 랜덤성 검정 결과를 runs_p변수에 추가
-install.packages("lawstat")
+```
+```{r, results="hide"}
+#랜덤성 검정을 위한 패키지 로드
 library(lawstat)
+```
+
+```{r}
+# 각 구별 매매가격의 랜덤성 검정 결과를 runs_p변수에 추가
 runs_p<-c()
 for(g in gu_list){
-  runs_p <- c(runs_p, runs.test(apt_data[gu %in% g,price])$p.value)
+  runs_p <- c(runs_p, runs.test(gu_meanprice[gu %in% g,price])$p.value)
 }
 
 ggplot(data.table(gu_list, runs_p), aes(x=gu_list, y=runs_p, group=1)) +
   geom_line() + geom_point() +
-  ylab('P-value') + xlab('구')
+  ylab('P-value') + xlab('구') +
+  theme(axis.text.x=element_text(angle=90))
 
-which(runs_p>0.05)
+gu_list[which(runs_p>0.05)]
 ```
 
-모든 구에 대해서 p값이 0.05 보다 작으므로 귀무가설 (랜덤하다)기각 할 수 있다 
+강북구, 광진구, 동작구, 양천구, 용산구, 중구를 제외하고에 p값이 0.05 보다 작으므로 귀무가설 (랜덤하다)기각 할 수 있다 
 따라서 랜덤하지 않은 어떤 패턴이 있다고 할 수 있다.
 
 그럼 이중에서 내가 살고 있는 관악구를 추출하여 시계열 패턴을 그려보겠다.
 
-```{r}
+```{r, fig.cap="[그림4]시계열 분할 ", fig.align="center"}
 gwanak_data <- apt_data[gu=="관악구",]
 gwanak_price <- aggregate(gwanak_data$price,by=list(gwanak_data$yyyyqrt),mean) 
 names(gwanak_price)<-c('yyyyqrt','price')
 tot_ts <- ts(gwanak_price$price,start=c(2011,1),frequency = 4)
-plot(tot_ts)
+plot(stl(tot_ts,s.window = 'periodic'))
 ```
 
 시계열 분석
-```{r}
-install.packages("forecast")
+```{r,fig.cap="[그림5]ARIMA 모델 가정 만족 확인", fig.align="center"}
+
 library(forecast)
 arima_mdl <- auto.arima(tot_ts)
 tsdiag(arima_mdl)
-
+```
+```{r,fig.cap="[그림6]서울 관악구 매매가 추이 예측", fig.align="center"}
 accuracy(arima_mdl)
 plot(forecast(arima_mdl,h=6))
 ```
 
+##4. 결론

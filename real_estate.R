@@ -124,10 +124,12 @@ ggplot(apt_data_by_gu_qrt,aes(x=yyyyqrt,y=pricemean,group=gu))+
 # 그렇다면 시계열에 패턴이 존재하는지 확인하는 방법은 시계열이 랜덤한지를 알아보는 랜덤성 검증이 있다.
 # 랜덤성 검정 -> 런검정 
 #
-gu_meanprice <- aggregate(apt_data$price,by=list(apt_data$yyyym,apt_data$gu),mean)
+gu_meanprice <- as.data.table(aggregate(apt_data$price,by=list(apt_data$yyyyqrt,apt_data$gu),mean))
+
 head(gu_meanprice)
 names(gu_meanprice)<- c('yyyym','gu','price')
 #중복없이 구 추출
+
 gu_list <- unique(gu_meanprice$gu)
 
 # 각 구별 매매가격의 랜덤성 검정 결과를 runs_p변수에 추가
@@ -135,12 +137,13 @@ install.packages("lawstat")
 library(lawstat)
 runs_p<-c()
 for(g in gu_list){
-  runs_p <- c(runs_p, runs.test(apt_data[gu %in% g,price])$p.value)
+  runs_p <- c(runs_p, runs.test(gu_meanprice[gu %in% g,price])$p.value )
 }
 
 ggplot(data.table(gu_list, runs_p), aes(x=gu_list, y=runs_p, group=1)) +
   geom_line() + geom_point() +
-  ylab('P-value') + xlab('구')
+  ylab('P-value') + xlab('구')+
+  theme(axis.text.x=element_text(angle=90))
 
 which(runs_p>0.05)
 
