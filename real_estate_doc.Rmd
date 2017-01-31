@@ -157,4 +157,66 @@ ggplot(apt_data_seo_price,aes(x=yyyyqrt,y=price,group=1))+
   stat_smooth(method='lm')
 ```
 
+서울시 구/분기별 아파트 매매 가격
+
+```{r}
+apt_data_by_gu_qrt <- aggregate(apt_data$price, by=list(apt_data$yyyyqrt,apt_data$gu), mean)
+names(apt_data_by_gu_qrt) <- c('yyyyqrt','gu','pricemean')
+
+ggplot(apt_data_by_gu_qrt,aes(x=yyyyqrt,y=pricemean,group=gu))+
+  geom_line()+
+  facet_wrap(~gu,scale='free_y', ncol=3)+
+  stat_smooth(method="lm")
+```
+
+시계열 분석
+시계열에 패턴이 존재한다면 미래에도 이러한 패턴이 계속 될 것이라는 가정하에 예측을 해볼 수 있다.
+그렇다면 시계열에 패턴이 존재하는지 확인하는 방법은 시계열이 랜덤한지를 알아보는 랜덤성 검증이 있다.
+랜덤성 검정 -> 런검정 
+
+```{r}
+gu_meanprice <- aggregate(apt_data$price,by=list(apt_data$yyyym,apt_data$gu),mean)
+head(gu_meanprice)
+names(gu_meanprice)<- c('yyyym','gu','price')
+#중복없이 구 추출
+gu_list <- unique(gu_meanprice$gu)
+
+# 각 구별 매매가격의 랜덤성 검정 결과를 runs_p변수에 추가
+install.packages("lawstat")
+library(lawstat)
+runs_p<-c()
+for(g in gu_list){
+  runs_p <- c(runs_p, runs.test(apt_data[gu %in% g,price])$p.value)
+}
+
+ggplot(data.table(gu_list, runs_p), aes(x=gu_list, y=runs_p, group=1)) +
+  geom_line() + geom_point() +
+  ylab('P-value') + xlab('구')
+
+which(runs_p>0.05)
+```
+
+모든 구에 대해서 p값이 0.05 보다 작으므로 귀무가설 (랜덤하다)기각 할 수 있다 
+따라서 랜덤하지 않은 어떤 패턴이 있다고 할 수 있다.
+
+그럼 이중에서 내가 살고 있는 관악구를 추출하여 시계열 패턴을 그려보겠다.
+
+```{r}
+gwanak_data <- apt_data[gu=="관악구",]
+gwanak_price <- aggregate(gwanak_data$price,by=list(gwanak_data$yyyyqrt),mean) 
+names(gwanak_price)<-c('yyyyqrt','price')
+tot_ts <- ts(gwanak_price$price,start=c(2011,1),frequency = 4)
+plot(tot_ts)
+```
+
+시계열 분석
+```{r}
+install.packages("forecast")
+library(forecast)
+arima_mdl <- auto.arima(tot_ts)
+tsdiag(arima_mdl)
+
+accuracy(arima_mdl)
+plot(forecast(arima_mdl,h=6))
+```
 
