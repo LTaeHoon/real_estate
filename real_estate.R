@@ -4,15 +4,16 @@ data_processing <- function(){
 #install.packages("XML")
 library(XML)
 library(data.table)
-
+library(stringr)
+library(ggplot2)
 #data 수집 과정 (data.go.kr에서 제공하는 API 사용)
 service_key <- "EeBjN2xdCzzcqHvefO0rZXaycAim0uGpKxnOX72PY1UpkSZnifzIK1kxLm61XXaQ4pFxhbW%2F%2FZbmQDKFiAFNVA%3D%3D"
 #서울시 지역코드
 locCode <-c("11110","11140","11170","11200","11215","11230","11260","11290","11305","11320","11350","11380","11410","11440","11470","11500","11530","11545","11560","11590","11620","11650","11680","11710","11740")
 locCode_nm <-c("종로구","중구","용산구","성동구","광진구","동대문구","중랑구","성북구","강북구","도봉구","노원구","은평구","서대문구","마포구","양천구","강서구","구로구","금천구","영등포구","동작구","관악구","서초구","강남구","송파구","강동구")
-# datelist <-c("201501","201502","201503","201504","201505","201506","201507","201508","201509","201510","201511","201512","201401","201402","201403","201404","201405","201406","201407","201408","201409","201410","201411","201412","201601","201602","201603","201604","201605","201606","201607","201608","201609","201610","201611","201612")
-datelist <-c("201301","201302","201303","201304","201305","201306","201307","201308","201309","201310","201311","201312")
-# "201101","201102","201103","201104","201105","201106","201107","201108","201109","201110","201111","201112","201201","201202","201203","201204","201205","201206","201207","201208","201209","201210","201211","201212",
+#datelist <-c("201501","201502","201503","201504","201505","201506","201507","201508","201509","201510","201511","201512","201401","201402","201403","201404","201405","201406","201407","201408","201409","201410","201411","201412","201601","201602","201603","201604","201605","201606","201607","201608","201609","201610","201611","201612")
+#datelist <-c("201301","201302","201303","201304","201305","201306","201307","201308","201309","201310","201311","201312")
+datelist<-c("201101","201102","201103","201104","201105","201106","201107","201108","201109","201110","201111","201112","201201","201202","201203","201204","201205","201206","201207","201208","201209","201210","201211","201212")
 
 #url <- paste0("http://openapi.molit.go.kr:8081/OpenAPI_ToolInstallPackage/service/rest/RTMSOBJSvc/getRTMSDataSvcAptTrade?LAWD_CD=11110&DEAL_YMD=201601&serviceKey=",service_key)
 
@@ -53,23 +54,29 @@ for(i in 1:length(urllist)){
   }
   total[[i]]<-rbindlist(item)
 }
-result_apt_data2 <- rbindlist(total)
+result_apt_data <- rbindlist(total)
 #컬럼명
 #names(result_apt_data)<-c("거래금액","건축년도","년","법정동","아파트","월","일","전용면적","지번","지역코드","층")
-save(result_apt_data2, file="apt_item_sales_dt2.Rdata")
+save(result_apt_data, file="apt_item_sales_dt3.Rdata")
 
 
-library(stringr)
-library(ggplot2)
-load("apt_item_sales_dt.Rdata") #load 2014~2016년도 데이터
-load("apt_item_sales_dt2.Rdata") #load 2013년도 데이터
 
-apt_data1<-data.table(result_apt_data)
+result_apt_data1<-get(load("apt_item_sales_dt.Rdata")) #load 2014~2016년도 데이터
+result_apt_data2<-get(load("apt_item_sales_dt2.Rdata")) #load 2013년도 데이터
+result_apt_data3<-get(load("apt_item_sales_dt3.Rdata")) #2011~2012년도 데이터
+apt_data1<-data.table(result_apt_data1)
 apt_data2<-data.table(result_apt_data2)
-#apt_data<-data.table(result_apt_data)
-#colnames(apt_data) <- c('price','con_year','year','dong','aptnm','month','dat','area','bungi','loc','floor')
-apt_data<-rbindlist(list(apt_data1,apt_data2))
+apt_data3<-data.table(result_apt_data3)
+apt_data<-rbindlist(list(apt_data1,apt_data2,apt_data3))
+#데이터 내 결측값 확인
+colSums(is.na(apt_data)) 
+#loc가 잘못 들어가 있는 데이터에 대한 처리
+index_na <-is.na(apt_data$floor)
+apt_data[index_na]$floor <- apt_data[index_na]$loc
+apt_data[index_na]$loc <- apt_data[index_na]$bungi
+apt_data[index_na]$bungi <- NA
 
+#데이터 전처리(컬럼 속성 수정 및 필요한 컬럼 생성)
 apt_data[,price:=as.character(price)%>%str_trim()%>%sub(",","",.)%>%as.numeric()]
 apt_data[,con_year:=as.character(con_year)%>%str_trim()%>%as.numeric()]
 apt_data[,year:=as.character(year)%>%str_trim()%>%as.numeric()]
@@ -81,13 +88,8 @@ apt_data[,dong:=as.character(dong)%>%str_trim()]
 apt_data[,yyyyqrt:=paste0(year,qrt)]
 apt_data[,month:=as.character(month)%>%str_trim()%>%as.numeric()]
 apt_data[,yyyym:=paste0(year,month)]
-#loc가 잘못 들어가 있는 데이터에 대한 처리
-index_na <-is.na(apt_data$floor)
-apt_data[index_na]$floor <- apt_data[index_na]$loc
-apt_data[index_na]$loc <- apt_data[index_na]$bungi
-apt_data[index_na]$bungi <- NA
-
 lapply(locCode,function(x){apt_data[loc==x,gu:=locCode_nm[which(locCode==x)]]})
+
 # 데이터 확인
 unique(apt_data$loc)
 unique(apt_data$gu)
@@ -95,11 +97,13 @@ unique(apt_data$gu)
 #서울 지역 아파트 매매가격 추이, 매매가격 예측이 가능한가?
 
 # 먼저 서울 지역 분기별 아파트 매매가격 변화
-
-ggplot(apt_data,aes(x=yyyyqrt,y=price))+
-  geom_boxplot(aes(fill=yyyyqrt),outlier.size=0.5) +
-  xlab("2016년 분기별")+
-  ylab("아파트매매가격")
+apt_data_seo_price <- aggregate(apt_data$price,by=list(apt_data$yyyyqrt),mean)
+names(apt_data_seo_price) <- c("yyyyqrt","price")
+ggplot(apt_data_seo_price,aes(x=yyyyqrt,y=price,group=1))+
+  geom_line() +
+  xlab("분기별")+
+  ylab("평균매매가격")+
+  stat_smooth(method='lm')
 
 
 
