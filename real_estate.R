@@ -154,8 +154,14 @@ which(runs_p>0.05)
 gwanak_data <- apt_data[gu=="관악구",]
 gwanak_price <- aggregate(gwanak_data$price,by=list(gwanak_data$yyyyqrt),mean) 
 names(gwanak_price)<-c('yyyyqrt','price')
-tot_ts <- ts(gwanak_price$price,start=c(2013,1),frequency = 4)
+tot_ts <- ts(gwanak_price$price,start=c(2011,1),frequency = 4)
 plot(tot_ts)
+plot(stl(tot_ts,s.window = 'periodic'))
+
+#계절성 요인을 원 시계열 에서 제거하고 조정된 시계열 그림
+tot_ts.stl <-stl(tot_ts,s.window = 'periodic')
+adj.tot_ts<-tot_ts-tot_ts.stl$time.series[,1]
+plot(adj.tot_ts)
 
 install.packages("forecast")
 library(forecast)
