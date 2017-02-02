@@ -168,6 +168,9 @@ library(forecast)
 arima_mdl <- auto.arima(tot_ts)
 tsdiag(arima_mdl)
 
+#미래 예측값을 주어진 모델로 구하기
+pred <- predict(arima_mdl, n.ahead = 8)
+ts.plot(tot_ts,pred$pred)
 accuracy(arima_mdl)
 plot(forecast(arima_mdl,h=6))
 }
