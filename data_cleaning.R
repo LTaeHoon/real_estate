@@ -32,8 +32,6 @@ apt_data[,yyyym:=paste0(year,month)]
 
 # 먼저 서울 지역 분기별 아파트 매매가격 변화
 
- 
-
 ggplot(apt_data,aes(x=yyyyqrt,y=price))+
   geom_boxplot(aes(fill=yyyyqrt),outlier.size=0.5) +
   xlab("2016년 분기별")+
