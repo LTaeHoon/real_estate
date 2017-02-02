@@ -3,8 +3,8 @@ title: "부동산 매매가격 추이 분석"
 author: "taehoon"
 date: "2017년 1월 31일"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -192,7 +192,7 @@ names(gu_meanprice)<- c('yyyyqrt','gu','price')
 #중복없이 구 추출
 gu_list <- unique(gu_meanprice$gu)
 ```
-```{r, results="hide"}
+```{r, warning=FALSE}
 #랜덤성 검정을 위한 패키지 로드
 library(lawstat)
 ```
@@ -228,7 +228,7 @@ plot(stl(tot_ts,s.window = 'periodic'))
 ```
 
 여기서 사용한 모델링 방법은 ARIMA 모형을 사용했다. ARIMA 모델의 적합 판별을 위해 KPSS test, ACF, PACF를 그려 확인하여 적절한 d,p,q를 찾아야 하나 여기서는 auto.arima 를 통해 자동 모델링을 하였다.
-```{r,fig.cap="[그림5]ARIMA 모델링 수행", fig.align="center"}
+```{r,warning=FALSE,fig.cap="[그림5]ARIMA 모델링 수행", fig.align="center"}
 
 library(forecast)
 arima_mdl <- auto.arima(tot_ts)
